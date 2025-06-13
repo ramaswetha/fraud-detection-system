@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>🎯 Demo - Sample Transactions</h2>
+
+<p>Try these pre-configured sample transactions to see the fraud detection system in action:</p>
+
+{% for sample in sample_transactions %}
+<div class="alert alert-{{ 'warning' if 'Suspicious' in sample.name else 'success' if 'Normal' in sample.name else 'danger' }}">
+    <h3>{{ sample.name }}</h3>
+    <form method="POST" action="/analyze" style="display: inline;">
+        <input type="hidden" name="amount" value="{{ sample.amount }}">
+        <input type="hidden" name="merchant" value="{{ sample.merchant }}">
+        <input type="hidden" name="account_age_days" value="{{ sample.account_age_days }}">
+        <input type="hidden" name="merchant_risk_score" value="{{ sample.merchant_risk_score }}">
+        <input type="hidden" name="cross_border" value="{{ sample.cross_border }}">
+        <input type="hidden" name="high_risk_merchant" value="{{ sample.high_risk_merchant }}">
+        <input type="hidden" name="user_id" value="DEMO_USER">
+        
+        <p><strong>Amount:</strong> ${{ sample.amount }} | <strong>Merchant:</strong> {{ sample.merchant }}</p>
+        <button type="submit" class="btn">Analyze This Transaction</button>
+    </form>
+</div>
+{% endfor %}
+
+<h3>📡 API Usage Example</h3>
+<div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+    <h4>POST /api/analyze</h4>
+    <pre style="background: #2c3e50; color: white; padding: 15px; border-radius: 4px; overflow-x: auto;">
+curl -X POST http://localhost:5000/api/analyze \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user_id": "USER_123",
+    "amount": 1500.0,
+    "merchant": "Online Store",
+    "account_age_days": 30,
+    "merchant_risk_score": 0.7,
+    "cross_border": 1
+  }'</pre>
+</div>
+
+<h3>🔧 System Features</h3>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin: 20px 0;">
+    <div class="stat-card">
+        <h4>🤖 Machine Learning</h4>
+        <p>Random Forest and SVM algorithms with ensemble prediction for 90%+ accuracy</p>
+    </div>
+    <div class="stat-card">
+        <h4>⚡ Real-time Detection</h4>
+        <p>Instant fraud scoring with risk level classification and automated alerts</p>
+    </div>
+    <div class="stat-card">
+        <h4>📊 Analytics Dashboard</h4>
+        <p>Comprehensive fraud statistics, trends analysis, and transaction monitoring</p>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>🔍 Analyze Transaction</h2>
+
+{% if error %}
+<div class="alert alert-danger">{{ error }}</div>
+{% endif %}
+
+{% if analyzed %}
+<div class="alert alert-{{ 'danger' if prediction.is_fraud else 'success' }}">
+    <h3>Analysis Results</h3>
+    <p><strong>Transaction ID:</strong> {{ transaction.transaction_id }}</p>
+    <p><strong>Fraud Detected:</strong> {{ "Yes" if prediction.is_fraud else "No" }}</p>
+    <p><strong>Fraud Probability:</strong> {{ "%.1f"|format(prediction.fraud_probability * 100) }}%</p>
+    <p><strong>Risk Level:</strong> <span class="risk-{{ prediction.risk_level.lower() }}">{{ prediction.risk_level }}</span></p>
+</div>
+{% endif %}
+
+<form method="POST">
+    <h3>Transaction Details</h3>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+        <div>
+            <div class="form-group">
+                <label>Transaction ID (optional):</label>
+                <input type="text" name="transaction_id" placeholder="Auto-generated if empty">
+            </div>
+            <div class="form-group">
+                <label>User ID:</label>
+                <input type="text" name="user_id" required placeholder="USER_123">
+            </div>
+            <div class="form-group">
+                <label>Amount ($):</label>
+                <input type="number" name="amount" step="0.01" required placeholder="100.00">
+            </div>
+            <div class="form-group">
+                <label>Merchant:</label>
+                <input type="text" name="merchant" placeholder="Store Name">
+            </div>
+            <div class="form-group">
+                <label>Account Age (days):</label>
+                <input type="number" name="account_age_days" value="30" min="1">
+            </div>
+            <div class="form-group">
+                <label>Transactions Today:</label>
+                <input type="number" name="num_transactions_today" value="1" min="1">
+            </div>
+            <div class="form-group">
+                <label>Average Transaction Amount ($):</label>
+                <input type="number" name="avg_transaction_amount" step="0.01" value="100.00">
+            </div>
+            <div class="form-group">
+                <label>Time Since Last Transaction (minutes):</label>
+                <input type="number" name="time_since_last_transaction" value="60">
+            </div>
+        </div>
+        <div>
+            <div class="form-group">
+                <label>Merchant Risk Score (0-1):</label>
+                <input type="number" name="merchant_risk_score" step="0.1" value="0.1" min="0" max="1">
+            </div>
+            <div class="form-group">
+                <label>Location Risk Score (0-1):</label>
+                <input type="number" name="location_risk_score" step="0.1" value="0.1" min="0" max="1">
+            </div>
+            <div class="form-group">
+                <label>Device Risk Score (0-1):</label>
+                <input type="number" name="device_risk_score" step="0.1" value="0.1" min="0" max="1">
+            </div>
+            <div class="form-group">
+                <label>Hour of Day (0-23):</label>
+                <input type="number" name="hour_of_day" value="12" min="0" max="23">
+            </div>
+            <div class="form-group">
+                <label>Day of Week (0-6):</label>
+                <input type="number" name="day_of_week" value="1" min="0" max="6">
+            </div>
+            <div class="form-group">
+                <label>Is Weekend:</label>
+                <select name="is_weekend">
+                    <option value="0">No</option>
+                    <option value="1">Yes</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Cross Border:</label>
+                <select name="cross_border">
+                    <option value="0">No</option>
+                    <option value="1">Yes</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>High Risk Merchant:</label>
+                <select name="high_risk_merchant">
+                    <option value="0">No</option>
+                    <option value="1">Yes</option>
+                </select>
+            </div>
+        </div>
+    </div>
+    
+    <div class="form-group">
+        <label>Model Type:</label>
+        <select name="model_type">
+            <option value="ensemble">Ensemble (RF + SVM)</option>
+            <option value="rf">Random Forest</option>
+            <option value="svm">Support Vector Machine</option>
+        </select>
+    </div>
+    
+    <button type="submit" class="btn">Analyze Transaction</button>
+</form>
+{% endblock %}

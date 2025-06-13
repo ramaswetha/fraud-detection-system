@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>🚨 Fraud Alerts</h2>
+
+{% if alerts %}
+<table class="table">
+    <thead>
+        <tr>
+            <th>Alert ID</th>
+            <th>Transaction ID</th>
+            <th>Alert Type</th>
+            <th>Severity</th>
+            <th>User ID</th>
+            <th>Amount</th>
+            <th>Created</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for alert in alerts %}
+        <tr>
+            <td>{{ alert.id }}</td>
+            <td>{{ alert.transaction_id }}</td>
+            <td>{{ alert.alert_type }}</td>
+            <td class="risk-{{ alert.severity.lower() }}">{{ alert.severity }}</td>
+            <td>{{ alert.user_id }}</td>
+            <td>${{ "%.2f"|format(alert.amount) }}</td>
+            <td>{{ alert.created_at }}</td>
+            <td>
+                <button class="btn" style="background: #3498db; color: white; padding: 5px 10px; border: none; border-radius: 4px; cursor: pointer;">Review</button>
+                <button class="btn" style="background: #27ae60; color: white; padding: 5px 10px; border: none; border-radius: 4px; cursor: pointer;">Approve</button>
+                <button class="btn" style="background: #e74c3c; color: white; padding: 5px 10px; border: none; border-radius: 4px; cursor: pointer;">Block</button>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<div class="alert alert-success">
+    <p>No open alerts at this time. All transactions are within normal parameters.</p>
+</div>
+{% endif %}
+
+<div style="margin-top: 20px;">
+    <h3>⚠️ Alert Management</h3>
+    <p>This page shows all open fraud alerts that require attention. Each alert includes:</p>
+    <ul>
+        <li><strong>Alert Type:</strong> The type of suspicious activity detected</li>
+        <li><strong>Severity:</strong> Critical, High, or Medium based on risk assessment</li>
+        <li><strong>Transaction Details:</strong> Information about the flagged transaction</li>
+    </ul>
+    <p>Use the action buttons to review, approve, or block suspicious transactions.</p>
+</div>
+{% endblock %}

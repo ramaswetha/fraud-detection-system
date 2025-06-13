@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>📊 Fraud Detection Dashboard</h2>
+
+<div class="stats">
+    <div class="stat-card">
+        <div class="stat-value">{{ stats.total_transactions }}</div>
+        <div class="stat-label">Total Transactions</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ "%.1f"|format(stats.fraud_rate) }}%</div>
+        <div class="stat-label">Fraud Rate</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ stats.high_risk_transactions }}</div>
+        <div class="stat-label">High Risk Transactions</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ stats.open_alerts }}</div>
+        <div class="stat-label">Open Alerts</div>
+    </div>
+</div>
+
+<h3>🔍 Recent Transactions</h3>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Transaction ID</th>
+            <th>User ID</th>
+            <th>Amount</th>
+            <th>Fraud Probability</th>
+            <th>Risk Level</th>
+            <th>Timestamp</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for transaction in recent_transactions %}
+        <tr>
+            <td>{{ transaction.transaction_id }}</td>
+            <td>{{ transaction.user_id }}</td>
+            <td>${{ "%.2f"|format(transaction.amount) }}</td>
+            <td>{{ "%.1f"|format(transaction.fraud_probability * 100) }}%</td>
+            <td class="risk-{{ transaction.risk_level.lower() }}">{{ transaction.risk_level }}</td>
+            <td>{{ transaction.timestamp }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<h3>🚨 Recent Alerts</h3>
+{% if open_alerts %}
+<table class="table">
+    <thead>
+        <tr>
+            <th>Transaction ID</th>
+            <th>Alert Type</th>
+            <th>Severity</th>
+            <th>Amount</th>
+            <th>Fraud Probability</th>
+            <th>Created</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for alert in open_alerts %}
+        <tr>
+            <td>{{ alert.transaction_id }}</td>
+            <td>{{ alert.alert_type }}</td>
+            <td class="risk-{{ alert.severity.lower() }}">{{ alert.severity }}</td>
+            <td>${{ "%.2f"|format(alert.amount) }}</td>
+            <td>{{ "%.1f"|format(alert.fraud_probability * 100) }}%</td>
+            <td>{{ alert.created_at }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<div class="alert alert-success">No open alerts - all transactions are within normal parameters.</div>
+{% endif %}
+{% endblock %}

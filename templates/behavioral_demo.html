@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>🖱️ Behavioral Biometrics Demo</h2>
+
+<div class="alert alert-info">
+    <p>This demo shows how behavioral biometrics can be used to detect fraud by analyzing user behavior patterns.</p>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0;">
+    <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+        <h3>Keystroke Dynamics</h3>
+        <p>Type the following sentence in the box below:</p>
+        <p><em>"The quick brown fox jumps over the lazy dog"</em></p>
+        <textarea id="keystroke-input" style="width: 100%; padding: 10px; margin: 10px 0; height: 100px; border: 1px solid #ddd; border-radius: 4px;"></textarea>
+        <div id="keystroke-results" style="margin-top: 10px;"></div>
+    </div>
+    
+    <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+        <h3>Mouse Movement Analysis</h3>
+        <p>Move your mouse within this box and click the targets:</p>
+        <div id="mouse-area" style="width: 100%; height: 200px; background: #f8f9fa; border: 1px solid #ddd; border-radius: 4px; position: relative;">
+            <div id="target1" class="target" style="position: absolute; top: 50px; left: 50px; width: 20px; height: 20px; background: red; border-radius: 50%;"></div>
+            <div id="target2" class="target" style="position: absolute; top: 100px; left: 150px; width: 20px; height: 20px; background: blue; border-radius: 50%;"></div>
+            <div id="target3" class="target" style="position: absolute; top: 30px; left: 200px; width: 20px; height: 20px; background: green; border-radius: 50%;"></div>
+        </div>
+        <div id="mouse-results" style="margin-top: 10px;"></div>
+    </div>
+</div>
+
+<div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-top: 20px;">
+    <h3>Fraud Risk Assessment</h3>
+    <div id="risk-assessment">
+        <p>Complete the exercises above to see your behavioral biometric risk assessment.</p>
+    </div>
+</div>
+
+<script>
+// Keystroke dynamics
+let keystrokeData = [];
+let lastKeystroke = 0;
+const targetText = "The quick brown fox jumps over the lazy dog";
+
+document.getElementById('keystroke-input').addEventListener('keydown', function(e) {
+    const now = Date.now();
+    if (lastKeystroke > 0) {
+        const interval = now - lastKeystroke;
+        keystrokeData.push(interval);
+    }
+    lastKeystroke = now;
+    
+    // Update results
+    if (keystrokeData.length > 5) {
+        const avgInterval = keystrokeData.reduce((a, b) => a + b, 0) / keystrokeData.length;
+        const variance = Math.sqrt(keystrokeData.reduce((a, b) => a + Math.pow(b - avgInterval, 2), 0) / keystrokeData.length);
+        
+        document.getElementById('keystroke-results').innerHTML = `
+            <p><strong>Average Interval:</strong> ${avgInterval.toFixed(2)} ms</p>
+            <p><strong>Variance:</strong> ${variance.toFixed(2)}</p>
+            <p><strong>Typing Speed:</strong> ${(60000 / avgInterval / 5).toFixed(2)} WPM</p>
+        `;
+        
+        updateRiskAssessment();
+    }
+});
+
+// Mouse movement analysis
+let mouseData = {
+    velocities: [],
+    accelerations: [],
+    lastPosition: null,
+    lastVelocity: null,
+    lastTime: null,
+    targetsClicked: 0
+};
+
+document.getElementById('mouse-area').addEventListener('mousemove', function(e) {
+    const now = Date.now();
+    const rect = this.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    if (mouseData.lastPosition && mouseData.lastTime) {
+        const dt = (now - mouseData.lastTime) / 1000; // seconds
+        const dx = x - mouseData.lastPosition.x;
+        const dy = y - mouseData.lastPosition.y;
+        const distance = Math.sqrt(dx*dx + dy*dy);
+        const velocity = distance / dt; // pixels per second
+        
+        mouseData.velocities.push(velocity);
+        
+        if (mouseData.lastVelocity) {
+            const acceleration = (velocity - mouseData.lastVelocity) / dt;
+            mouseData.accelerations.push(Math.abs(acceleration));
+        }
+        
+        mouseData.lastVelocity = velocity;
+    }
+    
+    mouseData.lastPosition = { x, y };
+    mouseData.lastTime = now;
+    
+    // Update results
+    if (mouseData.velocities.length > 10) {
+        const avgVelocity = mouseData.velocities.reduce((a, b) => a + b, 0) / mouseData.velocities.length;
+        const avgAcceleration = mouseData.accelerations.length > 0 ? 
+            mouseData.accelerations.reduce((a, b) => a + b, 0) / mouseData.accelerations.length : 0;
+        
+        document.getElementById('mouse-results').innerHTML = `
+            <p><strong>Average Velocity:</strong> ${avgVelocity.toFixed(2)} px/s</p>
+            <p><strong>Average Acceleration:</strong> ${avgAcceleration.toFixed(2)} px/s²</p>
+            <p><strong>Targets Clicked:</strong> ${mouseData.targetsClicked}/3</p>
+        `;
+        
+        updateRiskAssessment();
+    }
+});
+
+// Target clicking
+document.querySelectorAll('.target').forEach(target => {
+    target.addEventListener('click', function(e) {
+        e.target.style.opacity = '0.3';
+        mouseData.targetsClicked++;
+        
+        document.getElementById('mouse-results').innerHTML = `
+            <p><strong>Average Velocity:</strong> ${mouseData.velocities.length > 0 ? 
+                (mouseData.velocities.reduce((a, b) => a + b, 0) / mouseData.velocities.length).toFixed(2) : 0} px/s</p>
+            <p><strong>Average Acceleration:</strong> ${mouseData.accelerations.length > 0 ? 
+                (mouseData.accelerations.reduce((a, b) => a + b, 0) / mouseData.accelerations.length).toFixed(2) : 0} px/s²</p>
+            <p><strong>Targets Clicked:</strong> ${mouseData.targetsClicked}/3</p>
+        `;
+        
+        updateRiskAssessment();
+    });
+});
+
+// Update risk assessment
+function updateRiskAssessment() {
+    if (keystrokeData.length < 5 || mouseData.velocities.length < 10) {
+        return;
+    }
+    
+    const avgKeystrokeInterval = keystrokeData.reduce((a, b) => a + b, 0) / keystrokeData.length;
+    const keystrokeVariance = Math.sqrt(keystrokeData.reduce((a, b) => a + Math.pow(b - avgKeystrokeInterval, 2), 0) / keystrokeData.length);
+    const typingSpeed = 60000 / avgKeystrokeInterval / 5;
+    
+    const avgVelocity = mouseData.velocities.reduce((a, b) => a + b, 0) / mouseData.velocities.length;
+    const avgAcceleration = mouseData.accelerations.length > 0 ? 
+        mouseData.accelerations.reduce((a, b) => a + b, 0) / mouseData.accelerations.length : 0;
+    
+    // Calculate risk score (simplified algorithm)
+    let riskScore = 0;
+    
+    // Unusual typing patterns
+    if (avgKeystrokeInterval > 300 || avgKeystrokeInterval < 50) riskScore += 0.2;
+    if (keystrokeVariance > 200) riskScore += 0.2;
+    if (typingSpeed < 20 || typingSpeed > 100) riskScore += 0.1;
+    
+    // Unusual mouse patterns
+    if (avgVelocity < 50 || avgVelocity > 1000) riskScore += 0.2;
+    if (avgAcceleration > 5000) riskScore += 0.2;
+    if (mouseData.targetsClicked < 3) riskScore += 0.1;
+    
+    // Determine risk level
+    let riskLevel = 'Low';
+    let riskClass = 'risk-low';
+    if (riskScore > 0.3) {
+        riskLevel = 'Medium';
+        riskClass = 'risk-medium';
+    }
+    if (riskScore > 0.6) {
+        riskLevel = 'High';
+        riskClass = 'risk-high';
+    }
+    
+    document.getElementById('risk-assessment').innerHTML = `
+        <h4>Behavioral Analysis Results:</h4>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div>
+                <p><strong>Keystroke Interval:</strong> ${avgKeystrokeInterval.toFixed(2)} ms</p>
+                <p><strong>Keystroke Variance:</strong> ${keystrokeVariance.toFixed(2)}</p>
+                <p><strong>Typing Speed:</strong> ${typingSpeed.toFixed(2)} WPM</p>
+            </div>
+            <div>
+                <p><strong>Mouse Velocity:</strong> ${avgVelocity.toFixed(2)} px/s</p>
+                <p><strong>Mouse Acceleration:</strong> ${avgAcceleration.toFixed(2)} px/s²</p>
+                <p><strong>Targets Clicked:</strong> ${mouseData.targetsClicked}/3</p>
+            </div>
+        </div>
+        <div style="margin-top: 20px; padding: 15px; border-radius: 8px;" class="${riskClass}">
+            <h4>Risk Assessment:</h4>
+            <p><strong>Risk Score:</strong> ${(riskScore * 100).toFixed(1)}%</p>
+            <p><strong>Risk Level:</strong> ${riskLevel}</p>
+            <p><strong>Analysis:</strong> ${getRiskAnalysis(riskScore, riskLevel)}</p>
+        </div>
+    `;
+}
+
+function getRiskAnalysis(score, level) {
+    if (level === 'Low') {
+        return "Your behavioral patterns match typical human patterns. Low fraud risk detected.";
+    } else if (level === 'Medium') {
+        return "Some unusual patterns detected in your behavior. This could be due to unfamiliarity with the interface or potential automation.";
+    } else {
+        return "Significant anomalies detected in your behavioral patterns. This resembles patterns often seen in fraudulent activities or automated scripts.";
+    }
+}
+</script>
+{% endblock %}

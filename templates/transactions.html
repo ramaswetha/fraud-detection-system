@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>📊 Recent Transactions</h2>
+
+{% if transactions %}
+<table class="table">
+    <thead>
+        <tr>
+            <th>Transaction ID</th>
+            <th>User ID</th>
+            <th>Amount</th>
+            <th>Merchant</th>
+            <th>Fraud Probability</th>
+            <th>Risk Level</th>
+            <th>Timestamp</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for transaction in transactions %}
+        <tr>
+            <td>{{ transaction.transaction_id }}</td>
+            <td>{{ transaction.user_id }}</td>
+            <td>${{ "%.2f"|format(transaction.amount) }}</td>
+            <td>{{ transaction.merchant }}</td>
+            <td>{{ "%.1f"|format(transaction.fraud_probability * 100) }}%</td>
+            <td class="risk-{{ transaction.risk_level.lower() }}">{{ transaction.risk_level }}</td>
+            <td>{{ transaction.timestamp }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<div class="alert alert-info">
+    <p>No transactions found. Try analyzing some transactions first.</p>
+</div>
+{% endif %}
+
+<div style="margin-top: 20px;">
+    <h3>🔍 Transaction Analysis</h3>
+    <p>This page shows all transactions processed by the fraud detection system. Each transaction includes:</p>
+    <ul>
+        <li><strong>Transaction ID:</strong> Unique identifier for the transaction</li>
+        <li><strong>User ID:</strong> Identifier for the user who made the transaction</li>
+        <li><strong>Amount:</strong> Transaction amount in dollars</li>
+        <li><strong>Fraud Probability:</strong> Likelihood of fraud (0-100%)</li>
+        <li><strong>Risk Level:</strong> Low, Medium, or High based on fraud probability</li>
+    </ul>
+    <p>Transactions with high risk levels are automatically flagged for review.</p>
+</div>
+{% endblock %}

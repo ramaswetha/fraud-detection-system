@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>🔌 Payment Processor Integrations</h2>
+
+<div class="stats">
+    <div class="stat-card">
+        <div class="stat-value">{{ integration_data.stripe.recent_charges if integration_data.stripe.status == 'connected' else 0 }}</div>
+        <div class="stat-label">Stripe Transactions (24h)</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ integration_data.real_time_processor.processed_count if integration_data.real_time_processor else 0 }}</div>
+        <div class="stat-label">Real-time Processed</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ integration_data.real_time_processor.queue_size if integration_data.real_time_processor else 0 }}</div>
+        <div class="stat-label">Queue Size</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ "%.1f"|format(integration_data.real_time_processor.fraud_rate_percent if integration_data.real_time_processor else 0) }}%</div>
+        <div class="stat-label">Real-time Fraud Rate</div>
+    </div>
+</div>
+
+<h3>💳 Stripe Integration</h3>
+{% if integration_data.stripe.status == 'connected' %}
+<div class="alert alert-success">
+    <h4>✅ Stripe Connected</h4>
+    <p>Successfully connected to Stripe API. Found {{ integration_data.stripe.recent_charges }} transactions in the last 24 hours.</p>
+    <button onclick="syncStripeData()" class="btn">Sync Recent Transactions</button>
+</div>
+
+{% if integration_data.stripe.charges %}
+<h4>Recent Stripe Transactions</h4>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Transaction ID</th>
+            <th>Amount</th>
+            <th>Status</th>
+            <th>Risk Level</th>
+            <th>Created</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for charge in integration_data.stripe.charges %}
+        <tr>
+            <td>{{ charge.transaction_id }}</td>
+            <td>${{ "%.2f"|format(charge.amount) }} {{ charge.currency.upper() }}</td>
+            <td>{{ charge.status.title() }}</td>
+            <td class="risk-{{ charge.risk_indicators.stripe_risk_level.lower() }}">
+                {{ charge.risk_indicators.stripe_risk_level.title() }}
+            </td>
+            <td>{{ charge.created.strftime('%Y-%m-%d %H:%M') if charge.created else 'N/A' }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endif %}
+
+{% elif integration_data.stripe.status == 'error' %}
+<div class="alert alert-danger">
+    <h4>❌ Stripe Connection Error</h4>
+    <p>Error connecting to Stripe: {{ integration_data.stripe.error }}</p>
+    <p>Please check your STRIPE_SECRET_KEY environment variable.</p>
+</div>
+{% else %}
+<div class="alert alert-warning">
+    <h4>⚠️ Stripe Not Configured</h4>
+    <p>Stripe integration is not configured. Set the STRIPE_SECRET_KEY environment variable to enable real-time Stripe transaction processing.</p>
+</div>
+{% endif %}
+
+<h3>🚀 Real-time Processing</h3>
+{% if integration_data.real_time_processor %}
+<div class="alert alert-success">
+    <h4>✅ Real-time Processor Active</h4>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 15px 0;">
+        <div><strong>Uptime:</strong> {{ "%.0f"|format(integration_data.real_time_processor.uptime_seconds / 60) }} minutes</div>
+        <div><strong>Processed:</strong> {{ integration_data.real_time_processor.processed_count }} transactions</div>
+        <div><strong>Fraud Detected:</strong> {{ integration_data.real_time_processor.fraud_detected_count }}</div>
+        <div><strong>Processing Threads:</strong> {{ integration_data.real_time_processor.processing_threads }}</div>
+        <div><strong>Alert Threads:</strong> {{ integration_data.real_time_processor.alert_threads }}</div>
+        <div><strong>Queue Size:</strong> {{ integration_data.real_time_processor.queue_size }}</div>
+    </div>
+</div>
+{% else %}
+<div class="alert alert-warning">
+    <h4>⚠️ Real-time Processing Disabled</h4>
+    <p>Real-time processing is not enabled. Set ENABLE_REAL_TIME_PROCESSING=true to enable automatic transaction processing.</p>
+</div>
+{% endif %}
+
+<h3>🔗 Webhook Endpoints</h3>
+<div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+    <h4>Available Webhook URLs:</h4>
+    <ul>
+        <li><strong>Stripe:</strong> <code>{{ request.url_root }}webhooks/stripe</code></li>
+        <li><strong>PayPal:</strong> <code>{{ request.url_root }}webhooks/paypal</code></li>
+        <li><strong>Test:</strong> <code>{{ request.url_root }}webhooks/test</code></li>
+    </ul>
+    <p><em>Configure these URLs in your payment processor's webhook settings to enable real-time fraud detection.</em></p>
+</div>
+
+<h3>🧪 Test Integration</h3>
+<div style="background: #fff3cd; padding: 20px; border-radius: 8px; margin: 20px 0;">
+    <h4>Test Webhook</h4>
+    <p>Send a test transaction to verify the integration is working:</p>
+    <button onclick="testWebhook()" class="btn">Send Test Transaction</button>
+    <div id="test-result" style="margin-top: 10px;"></div>
+</div>
+
+<script>
+function syncStripeData() {
+    fetch('/api/sync/stripe', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({hours_back: 24})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            alert(`Successfully synced ${data.processed_count} transactions from Stripe`);
+            location.reload();
+        } else {
+            alert(`Error: ${data.error}`);
+        }
+    })
+    .catch(error => {
+        alert(`Error: ${error}`);
+    });
+}
+
+function testWebhook() {
+    const testTransaction = {
+        test_transaction: {
+            transaction_id: 'TEST_' + Date.now(),
+            user_id: 'TEST_USER',
+            amount: 150.00,
+            merchant: 'Test Merchant',
+            payment_processor: 'test'
+        }
+    };
+    
+    fetch('/webhooks/test', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(testTransaction)
+    })
+    .then(response => response.json())
+    .then(data => {
+        const resultDiv = document.getElementById('test-result');
+        if (data.status === 'test_processed') {
+            resultDiv.innerHTML = `
+                <div class="alert alert-success">
+                    <strong>✅ Test Successful!</strong><br>
+                    Fraud Score: ${(data.fraud_prediction.fraud_probability * 100).toFixed(1)}%<br>
+                    Risk Level: ${data.fraud_prediction.risk_level}
+                </div>
+            `;
+        } else {
+            resultDiv.innerHTML = `<div class="alert alert-success">Test webhook received successfully!</div>`;
+        }
+    })
+    .catch(error => {
+        document.getElementById('test-result').innerHTML = `<div class="alert alert-danger">Error: ${error}</div>`;
+    });
+}
+</script>
+{% endblock %}

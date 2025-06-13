@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>⚙️ System Configuration</h2>
+
+<div class="stats">
+    <div class="stat-card">
+        <div class="stat-value">{{ config_summary.integrations.values() | select | list | length }}</div>
+        <div class="stat-label">Active Integrations</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ config_summary.features.values() | select | list | length }}</div>
+        <div class="stat-label">Enabled Features</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ config_summary.processing.max_threads }}</div>
+        <div class="stat-label">Processing Threads</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ "%.1f"|format(config_summary.thresholds.high_risk * 100) }}%</div>
+        <div class="stat-label">High Risk Threshold</div>
+    </div>
+</div>
+
+<h3>🔌 Payment Processor Integrations</h3>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Integration</th>
+            <th>Status</th>
+            <th>Configuration</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Stripe</td>
+            <td>
+                {% if config_summary.integrations.stripe %}
+                    <span class="risk-low">✅ Configured</span>
+                {% else %}
+                    <span class="risk-high">❌ Not Configured</span>
+                {% endif %}
+            </td>
+            <td>
+                {% if config_summary.integrations.stripe %}
+                    API Key: ****{{ validation_results.stripe_configured and "configured" or "missing" }}
+                {% else %}
+                    Set STRIPE_SECRET_KEY environment variable
+                {% endif %}
+            </td>
+        </tr>
+        <tr>
+            <td>PayPal</td>
+            <td>
+                {% if config_summary.integrations.paypal %}
+                    <span class="risk-low">✅ Configured</span>
+                {% else %}
+                    <span class="risk-high">❌ Not Configured</span>
+                {% endif %}
+            </td>
+            <td>
+                {% if config_summary.integrations.paypal %}
+                    Client ID & Secret: Configured
+                {% else %}
+                    Set PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET
+                {% endif %}
+            </td>
+        </tr>
+    </tbody>
+</table>
+
+<h3>🛡️ Fraud Database Integrations</h3>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Service</th>
+            <th>Status</th>
+            <th>Configuration</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>MaxMind minFraud</td>
+            <td>
+                {% if config_summary.integrations.maxmind %}
+                    <span class="risk-low">✅ Configured</span>
+                {% else %}
+                    <span class="risk-high">❌ Not Configured</span>
+                {% endif %}
+            </td>
+            <td>
+                {% if config_summary.integrations.maxmind %}
+                    Account ID & License Key: Configured
+                {% else %}
+                    Set MAXMIND_ACCOUNT_ID and MAXMIND_LICENSE_KEY
+                {% endif %}
+            </td>
+        </tr>
+        <tr>
+            <td>Sift</td>
+            <td>
+                {% if config_summary.integrations.sift %}
+                    <span class="risk-low">✅ Configured</span>
+                {% else %}
+                    <span class="risk-high">❌ Not Configured</span>
+                {% endif %}
+            </td>
+            <td>
+                {% if config_summary.integrations.sift %}
+                    API Key: Configured
+                {% else %}
+                    Set SIFT_API_KEY environment variable
+                {% endif %}
+            </td>
+        </tr>
+    </tbody>
+</table>
+
+<h3>🚀 System Features</h3>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Feature</th>
+            <th>Status</th>
+            <th>Description</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Real-time Processing</td>
+            <td>
+                {% if config_summary.features.real_time_processing %}
+                    <span class="risk-low">✅ Enabled</span>
+                {% else %}
+                    <span class="risk-medium">⚠️ Disabled</span>
+                {% endif %}
+            </td>
+            <td>Process transactions in real-time with {{ config_summary.processing.max_threads }} threads</td>
+        </tr>
+        <tr>
+            <td>Behavioral Biometrics</td>
+            <td>
+                {% if config_summary.features.behavioral_biometrics %}
+                    <span class="risk-low">✅ Enabled</span>
+                {% else %}
+                    <span class="risk-medium">⚠️ Disabled</span>
+                {% endif %}
+            </td>
+            <td>Analyze keystroke dynamics and mouse patterns</td>
+        </tr>
+        <tr>
+            <td>External Fraud Checks</td>
+            <td>
+                {% if config_summary.features.external_fraud_checks %}
+                    <span class="risk-low">✅ Enabled</span>
+                {% else %}
+                    <span class="risk-medium">⚠️ Disabled</span>
+                {% endif %}
+            </td>
+            <td>Query external fraud databases for enhanced detection</td>
+        </tr>
+        <tr>
+            <td>IP Geolocation</td>
+            <td>
+                {% if config_summary.features.ip_geolocation %}
+                    <span class="risk-low">✅ Enabled</span>
+                {% else %}
+                    <span class="risk-medium">⚠️ Disabled</span>
+                {% endif %}
+            </td>
+            <td>Analyze transaction location and IP reputation</td>
+        </tr>
+    </tbody>
+</table>
+
+<h3>⚙️ Risk Thresholds</h3>
+<div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+    <p><strong>Low Risk Threshold:</strong> {{ "%.1f"|format(config_summary.thresholds.low_risk * 100) }}% - Transactions below this threshold are considered low risk</p>
+    <p><strong>High Risk Threshold:</strong> {{ "%.1f"|format(config_summary.thresholds.high_risk * 100) }}% - Transactions above this threshold trigger alerts</p>
+    <p><strong>Processing Batch Size:</strong> {{ config_summary.processing.batch_size }} transactions per batch</p>
+    <p><strong>Processing Interval:</strong> {{ config_summary.processing.interval_seconds }} seconds between batches</p>
+</div>
+
+<h3>🔧 Environment Variables Setup</h3>
+<div style="background: #2c3e50; color: white; padding: 20px; border-radius: 8px; margin: 20px 0;">
+    <h4>Required Environment Variables:</h4>
+    <pre style="color: #ecf0f1; margin: 10px 0;">
+# Stripe Integration
+export STRIPE_SECRET_KEY="sk_test_..."
+export STRIPE_WEBHOOK_SECRET="whsec_..."
+
+# PayPal Integration  
+export PAYPAL_CLIENT_ID="your_client_id"
+export PAYPAL_CLIENT_SECRET="your_client_secret"
+
+# MaxMind Integration
+export MAXMIND_ACCOUNT_ID="your_account_id"
+export MAXMIND_LICENSE_KEY="your_license_key"
+
+# Sift Integration
+export SIFT_API_KEY="your_api_key"
+
+# Alert Configuration
+export FRAUD_ALERT_WEBHOOK_URL="https://your-webhook-url.com"
+export FRAUD_ALERT_EMAIL="alerts@yourcompany.com"
+    </pre>
+</div>
+{% endblock %}
